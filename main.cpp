@@ -368,7 +368,7 @@ int main() {
 
     // 2. POINT LIGHT: The Green Deck Lantern
     Light lantern(LightType::POINT, myglm::vec3(-5.0f, 3.0f, 0.0f));
-    lantern.color = myglm::vec3(0.0f, 1.0f, 0.2f); // Neon green glow
+    lantern.color = myglm::vec3(0.0f, 0.6f, 0.2f); // Neon green glow
     lantern.diffuseStrength = 1.0f;
     scene.addLight(&lantern);
 
