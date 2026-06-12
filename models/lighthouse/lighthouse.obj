@@ -1,6 +1,6 @@
 # Blender v2.83.7 OBJ File: '20_LightHouse.blend'
 # www.blender.org
-mtllib 20_LightHouse.mtl
+mtllib lighthouse.mtl
 o Cube
 v 3.916988 2.316323 -3.916988
 v 3.843165 0.211566 5.763402
