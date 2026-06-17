@@ -1,4 +1,4 @@
-project( 14_Boat_glfw )
+project( 15_Final_Project_glfw )
 
 message( "Source of application:  ${CMAKE_SOURCE_DIR} " )
 message( "Subproject name:  ${PROJECT_NAME} " )
