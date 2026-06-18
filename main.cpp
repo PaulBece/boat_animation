@@ -108,6 +108,13 @@ public:
     Rain* sceneRain = nullptr;
     Storm* sceneStorm = nullptr;
 
+    // --- FOG PARAMETERS ---
+    myglm::vec3 fogColor = myglm::vec3(0.01f, 0.02f, 0.06f); // Azul noche profunda (igual que glClearColor)
+    float       fogDensity = 0.015f;                            // 0.01=ligera, 0.022=marina, 0.05=densa
+    unsigned int litFogColorLoc = 0, litFogDensityLoc = 0;
+    unsigned int waterFogColorLoc = 0, waterFogDensityLoc = 0;
+
+
     unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0,rainShader=0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
     unsigned int waterModelLoc, waterViewLoc, waterProjLoc, waterViewPosLoc, waterTimeLoc, waterSurfaceYLoc;
     unsigned int unlitModelLoc, unlitViewLoc, unlitProjLoc, unlitColorLoc;
@@ -139,6 +146,12 @@ public:
         unlitProjLoc  = glGetUniformLocation(unlitShader, "projection");
         unlitColorLoc = glGetUniformLocation(unlitShader, "lightColor");
         unlitDirLoc   = glGetUniformLocation(unlitShader, "lightDir");
+
+        // Cache fog uniform locations
+        litFogColorLoc = glGetUniformLocation(litShader, "fogColor");
+        litFogDensityLoc = glGetUniformLocation(litShader, "fogDensity");
+        waterFogColorLoc = glGetUniformLocation(waterShader, "fogColor");
+        waterFogDensityLoc = glGetUniformLocation(waterShader, "fogDensity");
     }
 
     void setOcean(Ocean* ocean) { sceneOcean = ocean; }
@@ -265,10 +278,16 @@ public:
             glUniformMatrix4fv(litViewLoc, 1, GL_FALSE, myglm::value_ptr(view));
             glUniformMatrix4fv(litProjLoc, 1, GL_FALSE, myglm::value_ptr(projection));
             glUniform3fv(litViewPosLoc, 1, myglm::value_ptr(activeCamera->position));
+            // Fog uniforms - lit shader
+            glUniform3fv(litFogColorLoc, 1, myglm::value_ptr(fogColor));
+            glUniform1f(litFogDensityLoc, fogDensity);
         } else if (shaderProgram == waterShader) {
             glUniformMatrix4fv(waterViewLoc, 1, GL_FALSE, myglm::value_ptr(view));
             glUniformMatrix4fv(waterProjLoc, 1, GL_FALSE, myglm::value_ptr(projection));
             glUniform3fv(waterViewPosLoc, 1, myglm::value_ptr(activeCamera->position));
+            // Fog uniforms - water shader
+            glUniform3fv(waterFogColorLoc, 1, myglm::value_ptr(fogColor));
+            glUniform1f(waterFogDensityLoc, fogDensity);
         }
 
         if (isSceneDirty || shaderSwapped) {
@@ -376,6 +395,7 @@ int main() {
     Model lighthouseModel("lighthouse2", "lighthouse2.obj");
     Model ballModel("ball", "ball.obj");
     Model stormRayModel("stormray", "bolt.obj");
+    Model seabedModel("seabed", "seabed.obj");
     std::cout << "[ENGINE] Initialization block complete!\n\n";
 
     // ====================================================================
@@ -451,6 +471,9 @@ int main() {
     );
     stormRay.setVisibility(false);
     scene.addSceneElement(&stormRay);
+    SceneElement seafloor(&seabedModel, myglm::vec3(0.0f, -30.0f, 0.0f), myglm::vec3(1.0f));
+    scene.addSceneElement(&seafloor);
+
     // ====================================================================
     // RIGID HIERARCHICAL MEMBER REGISTRATION (Offset Linking Maps)
     // ====================================================================

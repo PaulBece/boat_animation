@@ -44,9 +44,14 @@ uniform int activePointLightCount;
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 uniform int activeSpotLightCount;
 
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoords;
+// --- FOG UNIFORMS ---
+uniform vec3  fogColor;     // Color de la niebla (debe coincidir con glClearColor)
+uniform float fogDensity;   // Densidad: 0.01 poca niebla, 0.04 niebla densa
+
+in vec3  FragPos;
+in vec3  Normal;
+in vec2  TexCoords;
+in float FogDepth;          // NEW: distancia del fragmento a la camara
 
 // --- ATTENUATION COEFFICIENTS ---
 // Industry standard multipliers calibrated for a ~50 unit clear rendering range
@@ -58,9 +63,7 @@ const float quadraticK = 0.032;
 
 vec3 CalculateDirLight(DirLight light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
-    // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    // Specular shading (Blinn-Phong)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
@@ -71,20 +74,14 @@ vec3 CalculateDirLight(DirLight light, vec3 normal, vec3 viewDir) {
 }
 
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
-    // 1. Compute the structural distance between the light source and the current surface pixel
     float distance = length(light.position - fragPos);
-
     vec3 lightDir = normalize(light.position - fragPos);
-    // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    // Specular shading
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
-    // 2. Compute the environmental drop-off factor using the 3-term formula
     float attenuation = 1.0 / (constantK + linearK * distance + quadraticK * (distance * distance));
 
-    // 3. Scale all lighting factors down by the distance attenuation
     vec3 ambient  = light.ambientStrength * light.color * attenuation;
     vec3 diffuse  = light.diffuseStrength * diff * light.color * attenuation;
     vec3 specular = light.specularStrength * spec * light.color * attenuation;
@@ -92,25 +89,18 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
 }
 
 vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
-    // 1. Compute distance for spotlight range decay
     float distance = length(light.position - fragPos);
-
     vec3 lightDir = normalize(light.position - fragPos);
-    // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    // Specular shading
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
-    // Spotlight intensity check (using soft edge interpolation formula) 
     float theta = dot(lightDir, normalize(-light.direction));
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
 
-    // 2. Compute the environmental drop-off factor
     float attenuation = 1.0 / (constantK + linearK * distance + quadraticK * (distance * distance));
 
-    // 3. Combine both the cone limits AND distance attenuation together cleanly
     vec3 ambient  = light.ambientStrength * light.color * attenuation;
     vec3 diffuse  = light.diffuseStrength * diff * light.color * intensity * attenuation;
     vec3 specular = light.specularStrength * spec * light.color * intensity * attenuation;
@@ -118,25 +108,38 @@ vec3 CalculateSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir
 }
 
 void main() {
-    vec3 norm = normalize(Normal);
+    vec3 norm    = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 totalLighting = vec3(0.0);
 
-    // 1. Accumulate Global Sun Illumination if present 
+    // 1. Accumulate Global Moonlight if present
     if (hasDirLight) {
         totalLighting += CalculateDirLight(dirLight, norm, viewDir);
     }
 
-    // 2. Accumulate Point Lights (Boats lanterns) 
+    // 2. Accumulate Point Lights (Boat lanterns)
     for (int i = 0; i < activePointLightCount; i++) {
         totalLighting += CalculatePointLight(pointLights[i], norm, FragPos, viewDir);
     }
 
-    // 3. Accumulate Spotlights (Lighthouses / Searchlights) 
+    // 3. Accumulate Spotlights (Lighthouses / Searchlights)
     for (int i = 0; i < activeSpotLightCount; i++) {
         totalLighting += CalculateSpotLight(spotLights[i], norm, FragPos, viewDir);
     }
 
     vec3 textureColor = texture(diffuseTexture, TexCoords).rgb;
-    FragColor = vec4(totalLighting * textureColor, 1.0);
+    vec3 litColor     = totalLighting * textureColor;
+
+    // --- FOG: formula exponencial cuadratica (suave y natural para ambientes maritimos) ---
+    // fogFactor = 1.0 -> color original (cerca de la camara)
+    // fogFactor = 0.0 -> color puro de niebla (lejos de la camara)
+    float fogExponent = fogDensity * FogDepth;
+    float fogFactor   = exp(-(fogExponent * fogExponent));
+    fogFactor         = clamp(fogFactor, 0.0, 1.0);
+
+	//este cambio hace que en vez de tornarse del color del fondo basico, se vaya haciendo transparente
+	FragColor = vec4(litColor, fogFactor);
+	// Esta es la version anterior:
+	//vec3 finalColor = mix(fogColor, litColor, fogFactor);
+	//FragColor = vec4(finalColor, 1.0);
 }

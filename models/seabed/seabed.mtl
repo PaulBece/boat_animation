@@ -1,0 +1,4 @@
+newmtl seabed_mat
+map_Kd seabed.png
+Ka 0.8 0.8 0.8
+Kd 1.0 1.0 1.0
