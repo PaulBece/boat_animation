@@ -15,6 +15,7 @@
 #include "include/light_element.h"
 #include "include/ocean.h"
 #include "include/skybox.h"
+#include "include/rain.h"
 #include "include/camera.h"
 #include "include/scene_element.h"
 #include "include/animation_group.h"
@@ -103,8 +104,9 @@ public:
     std::vector<Light*> sceneLights;       
     Ocean* sceneOcean = nullptr;
     Skybox* sceneSkybox = nullptr; 
+    Rain* sceneRain = nullptr;
 
-    unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
+    unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0,rainShader=0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
     unsigned int waterModelLoc, waterViewLoc, waterProjLoc, waterViewPosLoc, waterTimeLoc, waterSurfaceYLoc;
     unsigned int unlitModelLoc, unlitViewLoc, unlitProjLoc, unlitColorLoc;
 
@@ -115,8 +117,8 @@ public:
         lastTime = static_cast<float>(glfwGetTime());
     }
 
-    void setShaders(unsigned int standardLit, unsigned int water, unsigned int unlit, unsigned int skybox) {
-        litShader = standardLit; waterShader = water; unlitShader = unlit; skyboxShader = skybox;
+    void setShaders(unsigned int standardLit, unsigned int water, unsigned int unlit, unsigned int skybox, unsigned int rain) {
+        litShader = standardLit; waterShader = water; unlitShader = unlit; skyboxShader = skybox; rainShader = rain;
         litModelLoc   = glGetUniformLocation(litShader, "model");
         litViewLoc    = glGetUniformLocation(litShader, "view");
         litProjLoc    = glGetUniformLocation(litShader, "projection");
@@ -137,6 +139,7 @@ public:
 
     void setOcean(Ocean* ocean) { sceneOcean = ocean; }
     void setSkybox(Skybox* skybox) { sceneSkybox = skybox; }
+    void setRain(Rain* rain) { sceneRain = rain; }
     void addLight(Light* light) { sceneLights.push_back(light); }
     void addSceneElement(SceneElement* obj) { objects.push_back(obj); }
     void addLightElement(LightElement* obj) { lightObjects.push_back(obj); addLight(&obj->light); }
@@ -222,6 +225,12 @@ public:
             glUniform1f(waterTimeLoc, currentTime);
             glUniform1f(waterSurfaceYLoc, sceneOcean->height);
             sceneOcean->draw(waterShader);
+        }
+        // Pass 4: Rain Overlay
+        if (sceneRain != nullptr) {
+            sceneRain->update(deltaTime, activeCamera->position);
+            sceneRain->draw(rainShader, view, projection);
+            lastShaderProgram = rainShader;
         }
         isSceneDirty = false;
     }
@@ -336,8 +345,9 @@ int main() {
     unsigned int waterShader   = loadShaders("water.vert", "water.frag");
     unsigned int unlitShader   = loadShaders("unlit.vert", "unlit.frag");
     unsigned int skyboxShader  = loadShaders("skybox.vert", "skybox.frag");
+    unsigned int rainShader    = loadShaders("rain.vert", "rain.frag");
 
-    scene.setShaders(shaderProgram, waterShader, unlitShader,skyboxShader);
+    scene.setShaders(shaderProgram, waterShader, unlitShader,skyboxShader,rainShader);
 
     std::cout << "\n[ENGINE] Starting model initialization block...\n";
     Model galleonModel("galleon", "galleon.obj");
@@ -447,9 +457,10 @@ int main() {
     std::string(MODELS_PATH) + "skybox/ny.png",
     std::string(MODELS_PATH) + "skybox/pz.png",
     std::string(MODELS_PATH) + "skybox/nz.png"
-});
+    });
     scene.setSkybox(&skybox);
-
+    //set rain
+    Rain rain(2500, 100.0f, 40.0f, -8.0f);    scene.setRain(&rain);
     // Central application processing block loops
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -458,6 +469,7 @@ int main() {
     }
 
     glDeleteProgram(shaderProgram); glDeleteProgram(waterShader); glDeleteProgram(unlitShader);glDeleteProgram(skyboxShader);
+    glDeleteProgram(rainShader);
     glfwDestroyWindow(window); glfwTerminate();
     return 0;
 }
