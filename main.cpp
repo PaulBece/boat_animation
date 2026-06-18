@@ -430,21 +430,43 @@ int main() {
     // 1. Core Ambient Directional Moonlight
     Light midnightMoon(LightType::DIRECTIONAL);
     midnightMoon.setDirection(myglm::vec3(0.2f, -1.0f, 0.4f));
+    midnightMoon.setDirection(myglm::vec3(-0.3f, -1.0f, -0.2f));
     midnightMoon.color            = myglm::vec3(0.12f, 0.18f, 0.32f);
     midnightMoon.ambientStrength  = 0.05f;
     midnightMoon.diffuseStrength  = 0.25f;
     midnightMoon.specularStrength = 0.40f;
+    /*
+    aumentar iluminacion
+    midnightMoon.setDirection(myglm::vec3(-0.3f, -1.0f, -0.2f));
+    midnightMoon.color            = myglm::vec3(1.0f, 0.95f, 0.82f);
+    midnightMoon.ambientStrength  = 0.35f;
+    midnightMoon.diffuseStrength  = 1.20f;
+    midnightMoon.specularStrength = 0.80f;    
+    modo noche
+    ghtMoon.color            = myglm::vec3(0.12f, 0.18f, 0.32f);
+    midnightMoon.ambientStrength  = 0.05f;
+    midnightMoon.diffuseStrength  = 0.25f;
+    midnightMoon.specularStrength = 0.40f;
+    */
     scene.addLight(&midnightMoon);
 
     // 2. Focused Sweeping Searchlight (Lighthouse)
     LightElement searchlightBeam(&ballModel, LightType::SPOTLIGHT, myglm::vec3(0.0f), myglm::vec3(0.006f));
     searchlightBeam.light.color            = myglm::vec3(1.0f, 0.95f, 0.82f);
     searchlightBeam.light.ambientStrength  = 0.00f;
-    searchlightBeam.light.diffuseStrength  = 6.0f;
-    searchlightBeam.light.specularStrength = 4.0f;
+    searchlightBeam.light.diffuseStrength  = 50.0f;
+    searchlightBeam.light.specularStrength = 20.0f;
     searchlightBeam.light.cutOff           = std::cos(myglm::radians(7.5f));
     searchlightBeam.light.outerCutOff      = std::cos(myglm::radians(13.0f));
     scene.addLightElement(&searchlightBeam);
+    /*
+    noraml
+    searchlightBeam.light.diffuseStrength  = 6.0f;
+    searchlightBeam.light.specularStrength = 4.0f;
+    aumentado
+    searchlightBeam.light.diffuseStrength  = 50.0f;
+    searchlightBeam.light.specularStrength = 20.0f;
+    */
 
     // 3. Floating Masthead Beacon (Sailing Boat)
     LightElement boatLantern(&ballModel, LightType::POINT, myglm::vec3(0.0f), myglm::vec3(0.001f));
