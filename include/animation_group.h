@@ -18,19 +18,19 @@ enum class AnimationType {
 struct SceneMember {
     SceneElement* element;
     myglm::vec3 localOffsetPos;
-    myglm::vec3 localOffsetRot; // Relative Euler angle offsets (Pitch, Yaw, Roll)
+    myglm::vec3 localOffsetRot;
 };
 
 struct LightMember {
     LightElement* element;
     myglm::vec3 localOffsetPos;
-    myglm::vec3 localOffsetRot; // Relative Euler angle offsets (Pitch, Yaw, Roll)
+    myglm::vec3 localOffsetRot; 
 };
 
 struct CameraMember {
     Camera* camera;
     myglm::vec3 localOffsetPos;
-    float localOffsetYaw;       // Cameras track looking directions via specific angles (radians)
+    float localOffsetYaw;       
     float localOffsetPitch;
 };
 
@@ -38,7 +38,6 @@ class AnimationGroup {
 public:
     AnimationType type;
 
-    // The single source of truth for the group's invisible center pivot point
     myglm::vec3 position;
     myglm::vec3 rotation;       // Unified group orientation state (Pitch, Yaw, Roll)
 
@@ -56,7 +55,7 @@ public:
         : type(animType), position(startPivotPos), rotation(0.0f),
           orbitRadius(0.0f), orbitSpeed(0.0f), currentAngle(0.0f) {}
 
-    // --- Clean Method Overloads to Add Members ---
+    
     void addMember(SceneElement* element, myglm::vec3 localPos = myglm::vec3(0.0f), myglm::vec3 localRot = myglm::vec3(0.0f)) {
         sceneElements.push_back({element, localPos, localRot});
     }

@@ -6,7 +6,7 @@ public:
     int resolution; // Dynamically calculated 
     float size;     // Desired physical size of the plane
     float height;   // Base sea level height
-    float cellSize; // NEW: The locked spacing size of a single grid cell (density ratio)
+    float cellSize; // The locked spacing size of a single grid cell (density ratio)
 
     // Constructor accepts desired cell spacing width instead of segment counts
     Ocean(float totalSize = 400.0f, float targetCellSize = 0.5f, float initialHeight = 0.0f) 

@@ -15,18 +15,16 @@ private:
 
 public:
     Model* asset;
-    bool isVisible;       // ADOPTED: Clean visibility tracking flag
+    bool isVisible;
 
     SceneElement(Model* modelAsset, myglm::vec3 startPos = myglm::vec3(0.0f), myglm::vec3 scaleSize = myglm::vec3(1.0f))
         : asset(modelAsset), position(startPos), scale(scaleSize), rotation(0.0f), modelMatrix(1.0f), isVisible(true) {
         updateMatrix(); 
     }
 
-    // ADOPTED: Simple visibility modifier function interface
     void setVisibility(bool visible) { isVisible = visible; }
     void toggleVisibility()          { isVisible = !isVisible; }
 
-    // --- Active Transformation Control Interface ---
     void setPosition(const myglm::vec3& newPos) {
         position = newPos;
         updateMatrix();
@@ -52,7 +50,6 @@ public:
         updateMatrix();
     }
 
-    // Rebuilds a clean, drift-free matrix state from independent vectors
     void updateMatrix() {
         myglm::mat4 mat = myglm::mat4(1.0f);
         mat = myglm::translate(mat, position);

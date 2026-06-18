@@ -86,9 +86,6 @@ unsigned int loadShaders(const char* vertexFile, const char* fragmentFile) {
     return programID;
 }
 
-// ====================================================================
-// CENTRAL SCENE MANAGER CORE
-// ====================================================================
 class Scene {
 public:
     // Pointers used to prevent memory reallocation and vector invalidation bugs
@@ -329,9 +326,6 @@ public:
     }
 };
 
-// ====================================================================
-// WINDOW & INPUT HOOK CALLS
-// ====================================================================
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     if (g_SceneInstance && height > 0) {
@@ -398,9 +392,6 @@ int main() {
     Model seabedModel("seabed", "seabed.obj");
     std::cout << "[ENGINE] Initialization block complete!\n\n";
 
-    // ====================================================================
-    // CAMERA SYSTEM INVENTORIES
-    // ====================================================================
     // Camera 1: Free flight drone camera
     Camera freeDroneCam(CameraMode::DRONE, myglm::vec3(0.0f, 15.0f, 50.0f));
     scene.addCamera(&freeDroneCam);
@@ -413,10 +404,8 @@ int main() {
     Camera boatRiderCam(CameraMode::ATTACHED, myglm::vec3(0.0f));
     scene.addCamera(&boatRiderCam);
 
-    // ====================================================================
-    // BEHAVIORAL GROUPS ALLOCATIONS (Pivot-Offset Managers)
 
-    // ====================================================================
+    // BEHAVIORAL GROUPS ALLOCATIONS (Pivot-Offset Managers)
     AnimationGroup lighthouseGroup(AnimationType::STATIC, myglm::vec3(0.0f, -10.0f, 0.0f));
     AnimationGroup galleonGroup(AnimationType::ANCHORED_WATER, myglm::vec3(15.0f, 0.0f, 0.0f));
     
@@ -424,9 +413,8 @@ int main() {
     activeOrbitGroup.orbitRadius = 42.0f; 
     activeOrbitGroup.orbitSpeed  = 0.20f;
 
-    // ====================================================================
+
     // LIGHTS PACKET INSTANTIATIONS
-    // ====================================================================
     // 1. Core Ambient Directional Moonlight
     Light midnightMoon(LightType::DIRECTIONAL);
     midnightMoon.setDirection(myglm::vec3(0.2f, -1.0f, 0.4f));
@@ -474,9 +462,6 @@ int main() {
     SceneElement seafloor(&seabedModel, myglm::vec3(0.0f, -30.0f, 0.0f), myglm::vec3(1.0f));
     scene.addSceneElement(&seafloor);
 
-    // ====================================================================
-    // RIGID HIERARCHICAL MEMBER REGISTRATION (Offset Linking Maps)
-    // ====================================================================
     // A. Populate Stationary Lighthouse Tower Cluster
     lighthouseGroup.addMember(&towerStructure, myglm::vec3(0.0f, 0.0f, 0.0f));
     lighthouseGroup.addMember(&searchlightBeam, myglm::vec3(-1.0f, 16.4f, -1.1f), myglm::vec3(1.35f, -1.0f, 0.0f)); // Lantern platform placement
@@ -488,8 +473,6 @@ int main() {
     activeOrbitGroup.addMember(&playerCruiser, myglm::vec3(0.0f, -0.5f, 0.0f),myglm::vec3(-90.0f, 0.0f, 0.0f));
     activeOrbitGroup.addMember(&boatLantern, myglm::vec3(-0.60f, 4.4f, -2.35f)); // Mounted to top bow rigging
     
-    // Mount camera 6 units behind and 3.5 units above the boat pivot center
-    // localYaw offset of 3.14159f spins the camera lens 180 degrees to look forward at the boat's direction of travel
     activeOrbitGroup.addMember(&boatRiderCam, myglm::vec3(2.0f, 2.0f, -1.0f), myglm::PI, -0.15f);
 
     // Register active behavioral groups to management arrays
