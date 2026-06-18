@@ -107,6 +107,7 @@ public:
     unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
     unsigned int waterModelLoc, waterViewLoc, waterProjLoc, waterViewPosLoc, waterTimeLoc, waterSurfaceYLoc;
     unsigned int unlitModelLoc, unlitViewLoc, unlitProjLoc, unlitColorLoc;
+    unsigned int unlitDirLoc;
 
     float lastTime = 0.0f; float deltaTime = 0.0f; bool isSceneDirty = true;
 
@@ -133,6 +134,7 @@ public:
         unlitViewLoc  = glGetUniformLocation(unlitShader, "view");
         unlitProjLoc  = glGetUniformLocation(unlitShader, "projection");
         unlitColorLoc = glGetUniformLocation(unlitShader, "lightColor");
+        unlitDirLoc   = glGetUniformLocation(unlitShader, "lightDir");
     }
 
     void setOcean(Ocean* ocean) { sceneOcean = ocean; }
@@ -186,6 +188,10 @@ public:
 
         if (!activeCamera) return;
 
+        if (sceneCameras.size() > 1 && animationGroups.size() > 0 && !animationGroups[0]->lightElements.empty()) {
+            animationGroups[0]->lightElements[0].localOffsetRot.y = sceneCameras[1]->yaw + myglm::PI;
+        }
+
         // 1. Unified physical transformation calculations pass
         float seaLevel = (sceneOcean != nullptr) ? sceneOcean->height : 0.0f;
         AnimationSystem::update(animationGroups, currentTime, deltaTime, seaLevel);
@@ -209,6 +215,13 @@ public:
             if (!obj->isVisible || obj->asset == nullptr) continue;
             glUniformMatrix4fv(unlitModelLoc, 1, GL_FALSE, myglm::value_ptr(obj->getModelMatrix()));
             glUniform3fv(unlitColorLoc, 1, myglm::value_ptr(obj->light.color));
+            if (obj->light.type == LightType::SPOTLIGHT) {
+                // Pass the active tracking direction of the beam
+                glUniform3fv(unlitDirLoc, 1, myglm::value_ptr(obj->light.direction));
+            } else {
+                // Point lights (like the boat lantern) have no direction; pass zero to disable masking
+                glUniform3fv(unlitDirLoc, 1, myglm::value_ptr(myglm::vec3(0.0f)));
+            }
             obj->asset->draw(unlitShader);
         }
         // Pass 2.5: Skybox Background
@@ -402,9 +415,7 @@ int main() {
     boatLantern.light.specularStrength = 1.5f;
     scene.addLightElement(&boatLantern);
 
-    // ====================================================================
-    // SCENERY GEOMETRY PACKET INSTANTIATIONS
-    // ====================================================================
+    
     SceneElement towerStructure(&lighthouseModel, myglm::vec3(0.0f),myglm::vec3(0.05f));
     scene.addSceneElement(&towerStructure);
 
@@ -419,7 +430,7 @@ int main() {
     // ====================================================================
     // A. Populate Stationary Lighthouse Tower Cluster
     lighthouseGroup.addMember(&towerStructure, myglm::vec3(0.0f, 0.0f, 0.0f));
-    lighthouseGroup.addMember(&searchlightBeam, myglm::vec3(-1.0f, 16.2f, -0.9f)); // Lantern platform placement
+    lighthouseGroup.addMember(&searchlightBeam, myglm::vec3(-1.0f, 16.4f, -1.1f), myglm::vec3(1.35f, -1.0f, 0.0f)); // Lantern platform placement
 
     // B. Populate Anchored Bobbing Galleon Cluster
     galleonGroup.addMember(&merchantGalleon, myglm::vec3(0.0f, 2.3f, 0.0f));
