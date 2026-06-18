@@ -10,9 +10,11 @@
 
 #include "include/myglm.h"
 #include "include/model.h"
+#undef STB_IMAGE_IMPLEMENTATION
 #include "include/light.h"
 #include "include/light_element.h"
 #include "include/ocean.h"
+#include "include/skybox.h"
 #include "include/camera.h"
 #include "include/scene_element.h"
 #include "include/animation_group.h"
@@ -99,10 +101,10 @@ public:
 
     myglm::mat4 projection;
     std::vector<Light*> sceneLights;       
-    Ocean* sceneOcean = nullptr;           
+    Ocean* sceneOcean = nullptr;
+    Skybox* sceneSkybox = nullptr; 
 
-    unsigned int litShader = 0, waterShader = 0, unlitShader = 0, lastShaderProgram = 0;
-    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
+    unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
     unsigned int waterModelLoc, waterViewLoc, waterProjLoc, waterViewPosLoc, waterTimeLoc, waterSurfaceYLoc;
     unsigned int unlitModelLoc, unlitViewLoc, unlitProjLoc, unlitColorLoc;
 
@@ -113,8 +115,8 @@ public:
         lastTime = static_cast<float>(glfwGetTime());
     }
 
-    void setShaders(unsigned int standardLit, unsigned int water, unsigned int unlit) {
-        litShader = standardLit; waterShader = water; unlitShader = unlit;
+    void setShaders(unsigned int standardLit, unsigned int water, unsigned int unlit, unsigned int skybox) {
+        litShader = standardLit; waterShader = water; unlitShader = unlit; skyboxShader = skybox;
         litModelLoc   = glGetUniformLocation(litShader, "model");
         litViewLoc    = glGetUniformLocation(litShader, "view");
         litProjLoc    = glGetUniformLocation(litShader, "projection");
@@ -134,6 +136,7 @@ public:
     }
 
     void setOcean(Ocean* ocean) { sceneOcean = ocean; }
+    void setSkybox(Skybox* skybox) { sceneSkybox = skybox; }
     void addLight(Light* light) { sceneLights.push_back(light); }
     void addSceneElement(SceneElement* obj) { objects.push_back(obj); }
     void addLightElement(LightElement* obj) { lightObjects.push_back(obj); addLight(&obj->light); }
@@ -208,7 +211,11 @@ public:
             glUniform3fv(unlitColorLoc, 1, myglm::value_ptr(obj->light.color));
             obj->asset->draw(unlitShader);
         }
-
+        // Pass 2.5: Skybox Background
+        if (sceneSkybox != nullptr) {
+            sceneSkybox->draw(skyboxShader, view, projection);
+            lastShaderProgram = skyboxShader;
+        }
         // Pass 3: Translucent Water Line
         if (sceneOcean != nullptr) {
             updateGlobalUniforms(waterShader);
@@ -328,7 +335,9 @@ int main() {
     unsigned int shaderProgram = loadShaders("shader.vert", "shader.frag");
     unsigned int waterShader   = loadShaders("water.vert", "water.frag");
     unsigned int unlitShader   = loadShaders("unlit.vert", "unlit.frag");
-    scene.setShaders(shaderProgram, waterShader, unlitShader);
+    unsigned int skyboxShader  = loadShaders("skybox.vert", "skybox.frag");
+
+    scene.setShaders(shaderProgram, waterShader, unlitShader,skyboxShader);
 
     std::cout << "\n[ENGINE] Starting model initialization block...\n";
     Model galleonModel("galleon", "galleon.obj");
@@ -430,6 +439,16 @@ int main() {
 
     // Initialize ocean plane simulation lines
     Ocean ocean(500.0f, 0.50f, -08.00f); scene.setOcean(&ocean);
+    // set skybox
+    Skybox skybox({
+    std::string(MODELS_PATH) + "skybox/px.png",
+    std::string(MODELS_PATH) + "skybox/nx.png",
+    std::string(MODELS_PATH) + "skybox/py.png",
+    std::string(MODELS_PATH) + "skybox/ny.png",
+    std::string(MODELS_PATH) + "skybox/pz.png",
+    std::string(MODELS_PATH) + "skybox/nz.png"
+});
+    scene.setSkybox(&skybox);
 
     // Central application processing block loops
     while (!glfwWindowShouldClose(window)) {
@@ -438,7 +457,7 @@ int main() {
         glfwSwapBuffers(window); glfwPollEvents();
     }
 
-    glDeleteProgram(shaderProgram); glDeleteProgram(waterShader); glDeleteProgram(unlitShader);
+    glDeleteProgram(shaderProgram); glDeleteProgram(waterShader); glDeleteProgram(unlitShader);glDeleteProgram(skyboxShader);
     glfwDestroyWindow(window); glfwTerminate();
     return 0;
 }
