@@ -31,7 +31,7 @@ public:
 
     Storm(SceneElement* lightningModel = nullptr, Light* sceneGlobalLight = nullptr)
         : boltElement(lightningModel), globalLight(sceneGlobalLight), isFlashing(false),
-          nextStrikeTime(0.0f), flashStartTime(0.0f), flashDuration(0.16f),
+          nextStrikeTime(0.0f), flashStartTime(0.0f), flashDuration(0.65f),
           minInterval(3.5f), maxInterval(8.0f),
           baseColor(0.12f, 0.18f, 0.32f), baseAmbientStrength(0.05f),
           baseDiffuseStrength(0.25f), baseSpecularStrength(0.40f),
@@ -86,10 +86,15 @@ private:
     }
 
     void beginFlash(float currentTime) {
+        
+        
         isFlashing = true;
         flashStartTime = currentTime;
 
         if (boltElement != nullptr) {
+            float x = randomRange(-40.0f, 40.0f);
+            float z = randomRange(-40.0f, 40.0f);
+            boltElement->setPosition(myglm::vec3(x, 25.0f, z));
             boltElement->setVisibility(true);
         }
 

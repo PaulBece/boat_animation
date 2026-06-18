@@ -16,6 +16,7 @@
 #include "include/ocean.h"
 #include "include/skybox.h"
 #include "include/rain.h"
+#include "include/storm.h"
 #include "include/camera.h"
 #include "include/scene_element.h"
 #include "include/animation_group.h"
@@ -105,6 +106,7 @@ public:
     Ocean* sceneOcean = nullptr;
     Skybox* sceneSkybox = nullptr; 
     Rain* sceneRain = nullptr;
+    Storm* sceneStorm = nullptr;
 
     unsigned int litShader = 0, waterShader = 0, unlitShader = 0, skyboxShader = 0,rainShader=0, lastShaderProgram = 0;    unsigned int litModelLoc, litViewLoc, litProjLoc, litViewPosLoc;
     unsigned int waterModelLoc, waterViewLoc, waterProjLoc, waterViewPosLoc, waterTimeLoc, waterSurfaceYLoc;
@@ -142,6 +144,7 @@ public:
     void setOcean(Ocean* ocean) { sceneOcean = ocean; }
     void setSkybox(Skybox* skybox) { sceneSkybox = skybox; }
     void setRain(Rain* rain) { sceneRain = rain; }
+    void setStorm(Storm* storm) { sceneStorm = storm; }
     void addLight(Light* light) { sceneLights.push_back(light); }
     void addSceneElement(SceneElement* obj) { objects.push_back(obj); }
     void addLightElement(LightElement* obj) { lightObjects.push_back(obj); addLight(&obj->light); }
@@ -188,6 +191,11 @@ public:
     void run() {
         float currentTime = updateTime();
         processInputs();
+
+        if (sceneStorm != nullptr) {
+            sceneStorm->update(currentTime);
+            isSceneDirty = true;
+        }
 
         if (!activeCamera) return;
 
@@ -367,6 +375,7 @@ int main() {
     Model boatModel("boat", "boat.obj");      
     Model lighthouseModel("lighthouse2", "lighthouse2.obj");
     Model ballModel("ball", "ball.obj");
+    Model stormRayModel("stormray", "bolt.obj");
     std::cout << "[ENGINE] Initialization block complete!\n\n";
 
     // ====================================================================
@@ -435,6 +444,13 @@ int main() {
     SceneElement playerCruiser(&boatModel, myglm::vec3(0.0f), myglm::vec3(0.005f));
     scene.addSceneElement(&playerCruiser);
 
+    SceneElement stormRay(
+        &stormRayModel,
+        myglm::vec3(0.0f, 0.0f, -45.0f),
+        myglm::vec3(12.0f)
+    );
+    stormRay.setVisibility(false);
+    scene.addSceneElement(&stormRay);
     // ====================================================================
     // RIGID HIERARCHICAL MEMBER REGISTRATION (Offset Linking Maps)
     // ====================================================================
@@ -472,6 +488,9 @@ int main() {
     scene.setSkybox(&skybox);
     //set rain
     Rain rain(2500, 100.0f, 40.0f, -8.0f);    scene.setRain(&rain);
+    //set stormrain
+    Storm storm(&stormRay, &midnightMoon);
+    scene.setStorm(&storm);
     // Central application processing block loops
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
